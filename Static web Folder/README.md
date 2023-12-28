@@ -7,7 +7,7 @@ You can easily host a static website on Amazon Simple Storage Service (Amazon S3
 
 
 
-After completing this lab, you should be able to:
+After completing this lab, I am able to:
 
 •	Create a bucket in Amazon S3
 
@@ -18,13 +18,13 @@ After completing this lab, you should be able to:
 •	Update the website
 
                                        Task 1: Creating a bucket in Amazon S3
-In this task, you will create an S3 bucket and configure it for static website hosting.
+In this task, I created an S3 bucket and configured it for static website hosting.
 
 1.	In the AWS Management Console, on the Services menu, choose S3.
 
 2.	Choose Create bucket
 An S3 bucket name is globally unique, and the namespace is shared by all AWS accounts. After you create a bucket, the name of that bucket cannot be used by another AWS account in any AWS Region unless you delete the bucket.
-Thus, for this lab, you will use a bucket name that includes a random number, such as: website-123
+Thus, for this lab, I will use a bucket name that includes a random number, such as: website-123
     
  3.	For Bucket name, enter: website-<123> (replace <123> with a random number)
 Public access to buckets is blocked by default. Because the files in your static website will need to be accessible through the internet, you must permit public access.
@@ -49,7 +49,7 @@ You can use tags to add additional information to a bucket, such as a project co
 •	Value: Marketing
 
 11.	Choose Save changes to save the tag.
-Next, you will configure the bucket for static website hosting.
+Next, I configured the bucket for static website hosting.
 
 12.	Stay in the Properties console.
 
@@ -65,35 +65,35 @@ o	Hosting type: Host a static website
 
 o	Index document: index.html
 
-	Note: You must enter this value, even though it is already displayed.
+	Note: I entered this value, even though it is already displayed.
 o	Error document: error.html
 
 16.	Choose Save changes
 
 17.	In the Static website hosting panel, choose the link under Bucket website endpoint.
-You will receive a 403 Forbidden message because the bucket permissions have not been configured yet. Keep this tab open in your web browser so that you can return to it later.
+    I  received a 403 Forbidden message because the bucket permissions have not been configured yet. I Keep this tab open in your web browser so that you can return to it later.
 
 
 ![Screenshot (40)](https://github.com/leye3664/AWS-ALX/assets/85311688/00102b51-e405-4352-bd4d-0bcefd99ddf8)
 
-Your bucket has now been configured to host a static website.
+My bucket has now been configured to host a static website.
 
                     Task 2: Uploading content to your bucket
-In this task, you will upload the files that will serve as your static website to the bucket.
+In this task, I uploaded the files that will serve as your static website to the bucket.
 
-18.	Right-click each of these links and download the files to your computer:
+18.	I Right-click each of these links and download the files to your computer:
 Ensure that each file keeps the same file name, including the extension.
 o	index.html
 o	script.js
 o	style.css
 
-19.	Return to the Amazon S3 console and in the website-<123> bucket you created earlier, choose the Objects tab.
+19. I	Returned to the Amazon S3 console and in the website-<123> bucket you created earlier, choose the Objects tab.
 
 20.	Choose Upload
 
 21.	Choose Add files
 
-22.	Locate and select the three files that you downloaded.
+22.	Locate and select the three files that I downloaded.
 
 23.	If prompted, choose I acknowledge that existing objects with the same name will be overwritten.
 
@@ -103,10 +103,10 @@ o	Choose Close
 
                                   Task 3: Enabling access to the objects
 Objects that are stored in Amazon S3 are private by default. This ensures that your organization's data remains secure.
-In this task, you will make the uploaded objects publicly accessible.
+In this task, I made the uploaded objects publicly accessible.
 First, confirm that the objects are currently private.
 
-25.	Return to the browser tab that showed the 403 Forbidden message.
+25. I	Returned to the browser tab that showed the 403 Forbidden message.
 
 26.	Refresh the webpage.
 If you accidentally closed this tab, go to the Properties tab, and in the Static website hosting panel choose the Endpoint link again.
@@ -120,15 +120,15 @@ o	To make individual objects in a bucket public, use an access control list (ACL
 It is normally safer to make individual objects public because this avoids accidentally making other objects public. However, if you know that the entire bucket contains no sensitive information, you can use a bucket policy.
 You will now configure the individual objects to be publicly accessible.
 
-27.	Return to the web browser tab with the Amazon S3 console (but do not close the website tab).
+27. I	Returned to the web browser tab with the Amazon S3 console (but do not close the website tab).
 
-28.	Select all three objects.
+28. I	Selected all three objects.
 
 29.	In the Actions menu, choose Make public via ACL.
 A list of the three objects is displayed.
 
-30.	Choose Make public
-Your static website is now publicly accessible.
+30.	 I Choose Make public
+My static website is now publicly accessible.
 
 31.	Return to the web browser tab that has the 403 Forbidden message.
 
@@ -140,7 +140,7 @@ You should now see the static website that is being hosted by Amazon S3.
 You can change the website by editing the HTML file and uploading it again to the S3 bucket.
 Amazon S3 is an object storage service, so you must upload the whole file. This action replaces the existing object in your bucket. You cannot edit the contents of an object—instead, the whole object must be replaced.
 
-33.	On your computer, load the index.html file into a text editor (for example, Notepad or TextEdit).
+33.	On my computer, I loaded the index.html file into a text editor (for example, Notepad or TextEdit).
 
 34.	Find the text Served from Amazon S3 and replace it with Created by <YOUR-NAME>, substituting your name for <YOUR-NAME> (for example, Created by Jane).
 
