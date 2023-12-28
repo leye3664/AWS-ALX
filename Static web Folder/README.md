@@ -1,5 +1,5 @@
 # AWS-ALX
-Cloud Projects
+Cloud Project
 
 
 Static websites have fixed content with no backend processing. They can contain HTML pages, images, style sheets, and all files that are needed to render a website. However, static websites do not use server-side scripting or a database. If you want your static webpages to provide interactivity and run programming logic, you can use JavaScript that runs in the user's web browser.
