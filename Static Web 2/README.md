@@ -89,7 +89,7 @@ Note: Notice that after you enable versioning, you can't disable it.
 
 10.	In your favorite text editor, open the index.html file. For example, you could use Notepad++ or TextWrangler.
 
-11.	I Modifyed the file according to the following instructions:
+11.	I Modified the file according to the following instructions:
 
 o	Locate the first line that has the embedded CSS code bgcolor="aquamarine" in the HTML, and change it to bgcolor="gainsboro".
 
