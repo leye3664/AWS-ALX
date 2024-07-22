@@ -1,0 +1,74 @@
+Introducing Amazon Elastic File System (Amazon EFS)
+
+## Lab Overview and Objectives
+
+This lab introduces you to Amazon Elastic File System (Amazon EFS) by using the AWS Management Console. 
+
+**After completing this lab, you should be able to:**
+- Log in to the AWS Management Console
+- Create an Amazon EFS file system
+- Log in to an Amazon Elastic Compute Cloud (Amazon EC2) instance that runs Amazon Linux
+- Mount your file system to your EC2 instance
+- Examine and monitor the performance of your file system
+
+## Tasks Overview
+
+### Task 1: Creating a Security Group to Access Your EFS File System
+Created a security group to allow inbound access for TCP on port 2049 for Network File System (NFS).
+
+### Task 2: Creating an EFS File System
+Configured an EFS file system and attached it to multiple EC2 instances in different Availability Zones.
+
+### Task 3: Connecting to Your EC2 Instance via SSH
+Connected to the EC2 instance using SSH from a Microsoft Windows system and a macOS/Linux system.
+
+### Task 4: Creating a New Directory and Mounting the EFS File System
+Mounted the EFS file system to the EC2 instance and examined available and used disk space.
+
+### Task 5: Examining the Performance Behavior of Your New EFS File System
+Used Flexible IO (fio) to benchmark the I/O performance of the EFS file system and monitored performance using Amazon CloudWatch.
+
+## Detailed Steps
+
+### Task 1: Creating a Security Group to Access Your EFS File System
+1. In the AWS Management Console, navigate to EC2 > Security Groups.
+2. Create a new security group with the following configurations:
+   - **Security group name**: EFS Mount Target
+   - **Description**: Inbound NFS access from EFS clients
+   - **VPC**: Lab VPC
+3. Add an inbound rule:
+   - **Type**: NFS
+   - **Source**: Custom (Security group ID of the EFSClient security group)
+
+### Task 2: Creating an EFS File System
+1. Navigate to EFS in the AWS Management Console.
+2. Create a new EFS file system and customize it:
+   - Uncheck Enable automatic backups.
+   - Lifecycle management: None
+   - Tags: Key - Name, Value - My First EFS File System
+3. Attach the EFS Mount Target security group to each Availability Zone mount target.
+4. Complete the setup and ensure the file system and mount targets are available.
+
+### Task 3: Connecting to Your EC2 Instance via SSH
+
+#### For Microsoft Windows Users:
+1. Download and save the labsuser.ppk file.
+2. Use PuTTY to connect to the EC2 instance with the downloaded key.
+
+#### For macOS and Linux Users:
+1. Download and save the labsuser.pem file.
+2. Use the terminal to SSH into the EC2 instance with the downloaded key.
+
+### Task 4: Creating a New Directory and Mounting the EFS File System
+1. In the SSH session, create a new directory: `sudo mkdir efs`
+2. Use the AWS Management Console to get the mount command and execute it in the SSH session.
+3. Verify the mounted file system with `sudo df -hT`.
+
+### Task 5: Examining the Performance Behavior of Your New EFS File System
+1. Run the fio command to benchmark write performance.
+2. Use Amazon CloudWatch to monitor and analyze the performance metrics.
+
+
+
+## Conclusion
+Successfully created and configured an Amazon EFS file system, mounted it to an EC2 instance, and examined its performance using fio and CloudWatch.
