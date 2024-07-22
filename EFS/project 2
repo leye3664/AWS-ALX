@@ -1,0 +1,174 @@
+: Creating a Dynamic Website for the Café
+
+#### Overview
+You will deploy an application on an Amazon EC2 instance to enable online ordering for a café. After verifying the application works in the development environment, you'll create an AMI and deploy the application in the production environment in a different AWS region.
+
+### Step-by-Step Instructions
+
+---
+
+### Part 1: Preparing an EC2 Instance to Host a Website
+
+#### Task 1: Analyze the Existing EC2 Instance
+1. **Navigate to EC2 Console:**
+   - Search for and select "EC2" in the AWS Management Console.
+   - Choose "Instances" and find the running instance named `aws-cloud9-CafeWebServer-...`.
+
+#### Task 2: Connect to the IDE on the EC2 Instance
+1. **Open AWS Cloud9:**
+   - Search for and select "Cloud9" in the AWS Management Console.
+   - Find the `CafeWebServer` environment and choose "Open."
+
+#### Task 3: Analyze the LAMP Stack Environment
+1. **Observe the OS Version:**
+   ```bash
+   cat /proc/version
+   ```
+
+2. **Check Web Server, Database, and PHP Details:**
+   ```bash
+   sudo httpd -v
+   service httpd status
+
+   mysql --version
+   service mysqld status
+
+   php --version
+   ```
+
+3. **Start Web Server and Database:**
+   ```bash
+   sudo chkconfig httpd on
+   sudo service httpd start
+   sudo service httpd status
+
+   sudo chkconfig mysqld on
+   sudo service mysqld start
+   sudo service mysqld status
+   ```
+
+4. **Configure the EC2 Instance for File Editing:**
+   ```bash
+   ln -s /var/www/ /home/ec2-user/environment
+   sudo chown ec2-user:ec2-user /var/www/html
+   ```
+
+5. **Create a Simple Test Webpage:**
+   - In the file browser, navigate to `CafeWebServer > www > html`.
+   - Create a new file named `index.html` with the content:
+     ```html
+     <html>Hello from the café web server!</html>
+     ```
+
+6. **Make the Website Accessible from the Internet:**
+   - Discover the IPv4 public IP address of the EC2 instance and try to load `http://<public-ip>` in a new browser tab.
+   - Update the security group of the EC2 instance to allow inbound HTTP traffic on TCP port 80.
+
+---
+
+### Part 2: Installing the Dynamic Website Application
+
+#### Task 4: Install the Café Application
+1. **Download and Extract Application Files:**
+   ```bash
+   cd ~/environment
+   wget https://aws-tc-largeobjects.s3-us-west-2.amazonaws.com/ILT-TF-200-ACACAD-20-EN/mod4-challenge/setup.tar.gz
+   tar -zxvf setup.tar.gz
+   wget https://aws-tc-largeobjects.s3-us-west-2.amazonaws.com/ILT-TF-200-ACACAD-20-EN/mod4-challenge/db.tar.gz
+   tar -zxvf db.tar.gz
+   wget https://aws-tc-largeobjects.s3-us-west-2.amazonaws.com/ILT-TF-200-ACACAD-20-EN/mod4-challenge/cafe.tar.gz
+   tar -zxvf cafe.tar.gz
+   ```
+
+2. **Move Café Files to Web Server Document Root:**
+   ```bash
+   mv cafe /var/www/html/
+   ```
+
+3. **Observe the Application Design:**
+   - Open `html/cafe/index.php` and `getAppParameters.php` in the AWS Cloud9 editor to review the code and understand how the application works.
+
+4. **Configure Application Parameters in AWS Systems Manager:**
+   ```bash
+   cd setup
+   ./set-app-parameters.sh
+   ```
+
+5. **Verify Parameters in AWS Systems Manager:**
+   - Go to the AWS Systems Manager Parameter Store and verify the seven parameters.
+
+6. **Configure MySQL Database for Café Application:**
+   ```bash
+   cd ../db/
+   ./set-root-password.sh
+   ./create-db.sh
+   ```
+
+7. **Verify Database Tables:**
+   ```bash
+   mysql -u root -p
+   show databases;
+   use cafe_db;
+   show tables;
+   select * from product;
+   exit;
+   ```
+
+8. **Update PHP Timezone Configuration:**
+   ```bash
+   sudo sed -i "2i date.timezone = \"America/New_York\" " /etc/php.ini
+   sudo service httpd restart
+   ```
+
+9. **Test Café Website:**
+   - Load `http://<public-ip>/cafe` in a browser tab.
+   - If the page does not load correctly, check IAM role permissions and ensure the EC2 instance has the necessary permissions.
+
+#### Task 5: Test the Web Application
+1. **Place an Order:**
+   - Go to the Menu page and submit an order.
+   - Verify the order details on the Order History page.
+
+---
+
+### Part 3: Creating Development and Production Websites in Different AWS Regions
+
+#### Task 6: Create an AMI and Launch Another EC2 Instance
+1. **Set Static Hostname and Create a New Key Pair:**
+   ```bash
+   sudo hostname cafeserver
+   ssh-keygen -t rsa -f ~/.ssh/id_rsa
+   cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys
+   ```
+
+2. **Create an AMI:**
+   - Select the EC2 instance and choose `Actions > Images and templates > Create Image`.
+   - Name the image `CafeServer` and create the AMI.
+
+3. **Copy the AMI to Another AWS Region:**
+   - Copy the AMI ID and make it available in the Oregon (us-west-2) Region.
+   - Wait for the AMI to be available in the new region.
+
+4. **Launch a New Instance from the AMI:**
+   - Region: Oregon (us-west-2)
+   - Instance Size: t2.small
+   - Network: Lab VPC Region 2, Public Subnet
+   - IAM Role: CafeRole
+   - Tag: `Name=ProdCafeServer`
+   - Security Group: `cafeSG` with TCP ports 22 and 80 open to anywhere.
+   - Proceed without a key pair.
+
+5. **Set Parameters for the New Instance:**
+   - Edit `set-app-parameters.sh` to match the new region and public DNS of the new instance.
+   - Run the script to set parameters in the new region.
+
+#### Task 7: Verify the New Café Instance
+1. **Verify New Instance in Oregon Region:**
+   - Copy the IPv4 public IP address and load `http://<public-ip>` to see the test page.
+   - Load `http://<public-ip>/cafe` to see the café website.
+   - Place an order to verify functionality.
+
+---
+
+Congratulations! You have successfully deployed a dynamic website for the café and created development and production environments in different AWS regions.
+             
