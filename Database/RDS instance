@@ -1,0 +1,192 @@
+### Challenge #1: Creating an RDS Instance for the Café Application
+
+#### Task 1: Creating an RDS Instance
+
+1. **Open the RDS Console:**
+   - Go to the AWS Management Console.
+   - In the search box next to **Services**, search for and choose **RDS** to open the RDS console.
+
+2. **Create a Database:**
+   - Choose **Create database**.
+
+3. **Select Database Engine:**
+   - Under **Engine options**, select **MariaDB**.
+
+4. **Set Templates and Availability Options:**
+   - Under **Templates**, select **Dev/Test**.
+   - Under **Settings**:
+     - **DB instance identifier**: `CafeDatabase`
+     - **Master username**: `admin`
+     - **Master password**: `Caf3DbPassw0rd!`
+     - **Confirm password**: `Caf3DbPassw0rd!` (copy and paste to ensure accuracy)
+
+5. **Choose DB Instance Class:**
+   - Under the **DB instance class** section:
+     - Select **db.t2.micro**.
+
+6. **Configure Storage:**
+   - **Storage type**: General Purpose (SSD)
+   - **Allocated storage**: 20 GiB
+
+7. **Configure Connectivity:**
+   - **Virtual Private Cloud (VPC)**: `Lab VPC`
+   - **Subnet Group**: `lab-db-subnet-group` (not publicly accessible)
+   - **Existing VPC security groups**: Choose `dbSG` and unselect the default security group.
+   - **Availability Zone**: Choose the first Availability Zone ending in 'a' (e.g., `us-east-1a`).
+   - **Database port**: Keep the default TCP port 3306.
+
+8. **Additional Configuration:**
+   - Clear (turn off) the **Enable Enhanced monitoring** option.
+
+9. **Create Database:**
+   - Choose **Create database**.
+   - Proceed to the next steps without waiting for the creation process to complete.
+
+#### Task 2: Analyzing the Existing Café Application Deployment
+
+1. **Open the EC2 Console:**
+   - In the search box next to **Services**, search for and choose **EC2** to open the EC2 console.
+
+2. **Find the CafeServer Instance:**
+   - In the left navigation pane, choose **Instances**.
+   - Find the running instance named **CafeServer**.
+
+3. **Test the Café Application:**
+   - Open a new browser tab and load the café application at `http://<public-ip-address>/cafe`. Replace `<public-ip-address>` with the actual IPv4 public IP address of the CafeServer instance.
+   - Browse to the **Menu** page and place an order by changing the quantity for at least one menu item and choosing **Submit Order**.
+   - Check the **Order Confirmation** page to ensure the application is working.
+   - Choose **Order History** to see past customer orders.
+
+4. **Connect to the EC2 Instance using AWS Systems Manager:**
+   - Navigate to the **Systems Manager Console** and choose **Session Manager**.
+   - Start a session and connect to the **CafeServer**.
+
+5. **Run Commands to Analyze the Environment:**
+   - At the prompt, enter the following commands:
+     ```bash
+     sudo su
+     su ec2-user
+     whoami
+     cd /home/ec2-user/
+     ```
+   - Ensure you are connected as the `ec2-user`.
+
+### Challenge #2: Exporting Data from the Old Database and Establishing a Connection to the New Database
+
+#### Task 3: Working with the Database on the EC2 Instance
+
+1. **Observe Details of the Database:**
+   - Run these commands to check the status and version of MariaDB:
+     ```bash
+     service mariadb status
+     mysql --version
+     ```
+
+2. **Retrieve Database Password:**
+   - Navigate to the **Systems Manager Console**.
+   - Choose **Parameter Store** and copy the value of the `/cafe/dbPassword` parameter.
+
+3. **Connect to the Local Database:**
+   - In the terminal, connect to MariaDB:
+     ```bash
+     mysql -u root -p
+     ```
+   - Paste the copied password when prompted.
+
+4. **Observe the Data:**
+   - Run the following SQL commands to review the database content:
+     ```sql
+     show databases;
+     use cafe_db;
+     show tables;
+     select * from `order`;
+     select * from `order_item`;
+     ```
+   - Exit the SQL client:
+     ```sql
+     exit;
+     ```
+
+5. **Export Existing Data:**
+   - Run the `mysqldump` command to export the database:
+     ```bash
+     mysqldump --databases cafe_db -u root -p > CafeDbDump.sql
+     ```
+   - Confirm the creation of `CafeDbDump.sql` by running:
+     ```bash
+     ls
+     cat CafeDbDump.sql
+     ```
+
+#### Task 4: Working with the RDS Database
+
+1. **Confirm RDS Instance Availability:**
+   - In the RDS console, confirm that the `CafeDatabase` RDS instance is available.
+
+2. **Establish Network Connection to RDS Instance:**
+   - In the terminal, connect to the new RDS instance:
+     ```bash
+     mysql -u admin -p --host <rds-endpoint>
+     ```
+   - Replace `<rds-endpoint>` with the actual endpoint and enter the RDS password (`Caf3DbPassw0rd!`).
+
+3. **Update Security Group Settings:**
+   - Update the inbound rules of the security group to allow traffic on TCP port 3306 from the EC2 instance security group.
+
+4. **Check Port Connectivity:**
+   - Run the `nmap` command to verify port 3306 is open:
+     ```bash
+     nmap -Pn <rds-endpoint>
+     ```
+
+5. **Check Databases on RDS Instance:**
+   - Run the `show databases;` command to confirm connectivity.
+   - Exit the SQL client:
+     ```sql
+     exit;
+     ```
+
+### Challenge #3: Importing Data and Connecting the Application to the New Database
+
+#### Task 5: Importing Data into the RDS Database Instance
+
+1. **Import Data to the RDS Instance:**
+   - Run the following command to import the data:
+     ```bash
+     mysql -u admin -p --host <rds-endpoint> < CafeDbDump.sql
+     ```
+
+2. **Confirm Data Import:**
+   - Connect to the RDS database:
+     ```bash
+     mysql -u admin -p --host <rds-endpoint>
+     ```
+   - Run the following SQL commands to confirm data import:
+     ```sql
+     show databases;
+     use cafe_db;
+     show tables;
+     select * from `order`;
+     ```
+   - Exit the SQL client:
+     ```sql
+     exit;
+     ```
+
+#### Task 6: Connecting the Café Application to the New Database
+
+1. **Update Parameter Store Values:**
+   - In the **Systems Manager Console**, navigate to **Parameter Store**.
+   - Update the `dbUrl` parameter to the new RDS endpoint.
+
+2. **Stop Local Database on EC2 Instance:**
+   - Run the following command to stop MariaDB:
+     ```bash
+     sudo service mariadb stop
+     ```
+
+3. **Test the Web Application:**
+   - Load the `http://<public-ip>/cafe/menu.php` page and place an order.
+   - Confirm the order in **Order History** to ensure data is now stored in the new RDS database.
+
+By following these steps, you will successfully create, configure, and migrate the café application's database to Amazon RDS, ensuring durability, scalability, and high performance.
