@@ -1,0 +1,80 @@
+This lab exercise takes you through creating a Virtual Private Cloud (VPC) and setting up the necessary components to host an application server. Here's a concise breakdown of the steps and tasks involved:
+
+### **Lab Overview and Objectives**
+- **Goals**:
+  - Deploy a VPC
+  - Create an internet gateway and attach it to the VPC
+  - Create a public subnet
+  - Create a private subnet
+  - Create an application server to test the VPC
+
+### **Tasks Breakdown**
+
+#### **Task 1: Creating a VPC**
+1. **Navigate to VPC Console**:
+   - Open the VPC console by searching for "VPC" in the AWS services search box.
+2. **Create VPC**:
+   - Choose "Create VPC" and configure:
+     - **Name tag**: Lab VPC
+     - **IPv4 CIDR block**: 10.0.0.0/16
+   - Create and then configure the VPC to enable DNS hostname.
+
+#### **Task 2: Creating Subnets**
+1. **Create a Public Subnet**:
+   - In the VPC, create a subnet with:
+     - **Subnet name**: Public Subnet
+     - **Availability Zone**: First in the list
+     - **IPv4 CIDR block**: 10.0.0.0/24
+   - Enable auto-assign public IPv4 address for this subnet.
+2. **Create a Private Subnet**:
+   - Create another subnet with:
+     - **Subnet name**: Private Subnet
+     - **Availability Zone**: First in the list
+     - **IPv4 CIDR block**: 10.0.2.0/23
+
+#### **Task 3: Creating an Internet Gateway**
+1. **Create and Attach an Internet Gateway**:
+   - Create an internet gateway named Lab IGW.
+   - Attach this internet gateway to the Lab VPC.
+
+#### **Task 4: Configuring Route Tables**
+1. **Create a Public Route Table**:
+   - Create a route table named Public Route Table for Lab VPC.
+   - Add a route to direct 0.0.0.0/0 traffic to the Lab IGW.
+   - Associate this route table with the Public Subnet.
+
+#### **Task 5: Creating a Security Group for the Application Server**
+1. **Create a Security Group**:
+   - Create a security group named App-SG for Lab VPC.
+   - Add an inbound rule to allow HTTP traffic from anywhere (0.0.0.0/0).
+
+#### **Task 6: Launching an Application Server in the Public Subnet**
+1. **Launch an EC2 Instance**:
+   - Configure the instance:
+     - **Name**: App Server
+     - **AMI**: Default Amazon Linux
+     - **Instance type**: t2.micro
+     - **Key pair**: vockey
+     - **Network**: Lab VPC
+     - **Subnet**: Public Subnet
+     - **Security Group**: App-SG
+     - **User Data**:
+       ```bash
+       #!/bin/bash
+       # Install Apache Web Server and PHP
+       dnf install -y httpd wget php-fpm php-mysqli php-json php php-devel
+       dnf install -y mariadb105-server
+       # Download Lab files
+       wget https://aws-tc-largeobjects.s3-us-west-2.amazonaws.com/ILT-TF-200-ACACAD-20-EN/mod6-guided/scripts/inventory-app.zip
+       unzip inventory-app.zip -d /var/www/html/
+       # Download and install the AWS SDK for PHP
+       wget https://github.com/aws/aws-sdk-php/releases/download/3.62.3/aws.zip
+       unzip aws -d /var/www/html
+       # Turn on web server
+       chkconfig httpd on
+       service httpd start
+       ```
+   - Launch the instance and verify its status.
+   - Access the application via its Public IPv4 DNS.
+
+By following these steps, you'll have created a functional VPC with both public and private subnets, configured a public route, and launched a web server to verify connectivity.
