@@ -1,0 +1,119 @@
+ AWS IAM Lab Challenge.
+
+### Task 1: Configuring an IAM Group with Policies and an IAM User
+
+1. **Log in to AWS Management Console as voclabs (Sofía).**
+2. **Open the IAM service page.**
+
+#### Create an IAM Group and Attach Policies
+3. **Create an IAM group named `AppDevelopers`.**
+   - Navigate to the IAM console.
+   - In the left navigation pane, choose `Groups`.
+   - Click `Create New Group`.
+   - Enter `AppDevelopers` as the group name.
+   - Click `Next Step` to attach policies.
+   - Attach the following policies:
+     - `AmazonEC2ReadOnlyAccess`
+     - `AWSCloud9EnvironmentMember`
+   - Click `Next Step`, then `Create Group`.
+
+#### Create an IAM User and Add to the Group
+4. **Create an IAM user named `Nikhil`.**
+   - In the left navigation pane, choose `Users`.
+   - Click `Add user`.
+   - Enter `Nikhil` for the user name.
+   - Select `AWS Management Console access`.
+   - Set a custom password: `@ppD3veloper2020!`
+   - Clear the check box for `Require password reset`.
+   - Click `Next: Permissions`.
+   - Choose `Add user to group`.
+   - Select the `AppDevelopers` group.
+   - Click `Next: Tags` (optional), then `Next: Review`, and finally `Create user`.
+
+#### Set Up AWS Cloud9 Environment
+5. **Set up the café web application in AWS Cloud9.**
+   - Open the AWS Cloud9 service page.
+   - Under `DEVCafeServer`, choose `Open IDE`.
+   - In the Bash terminal, run the following commands:
+     ```bash
+     wget https://aws-tc-largeobjects.s3-us-west-2.amazonaws.com/ILT-TF-200-ACACAD-20-EN/mod8-challenge/install-cafe-app.sh
+     chmod +x install-cafe-app.sh
+     ./install-cafe-app.sh
+     ```
+
+#### Share AWS Cloud9 Environment
+6. **Share the AWS Cloud9 environment with `Nikhil`.**
+   - In the top-right corner of the AWS Cloud9 IDE, choose `Share`.
+   - Under `Invite Members`, enter `Nikhil` and choose `Invite`.
+   - Click `OK`, then `OK` again, and finally `Done`.
+
+### Task 2: Logging in as Nikhil and Testing Access
+
+7. **Open an incognito or private browser tab and log in as `Nikhil`.**
+   - Use the console sign-in link from the IAM console.
+   - Sign in with the credentials:
+     - IAM user name: `Nikhil`
+     - Password: `@ppD3veloper2020!`
+
+#### Test Amazon EC2 Access
+8. **Open the Amazon EC2 console and view details.**
+   - Ensure you are in the correct region (e.g., N. Virginia).
+   - Locate the `aws-cloud9-DEVCafeServer` instance and copy the IPv4 Public IP address.
+   - Load `http://<dev-public-ip-address>/cafe` in a new browser tab.
+
+9. **Attempt to restart the `aws-cloud9-DEVCafeServer` instance.**
+   - Select the instance.
+   - From the `Instance state` menu, choose `Reboot`.
+
+### Answering Questions
+10. **Answer the first two questions:**
+    - What happened when Nikhil tried to reboot the EC2 instance?
+      - Expected: He should not have permission to reboot the instance.
+    - Which IAM policy allowed Nikhil to access the AWS Cloud9 environment?
+      - `AWSCloud9EnvironmentMember`
+
+### Task 3: Configuring IAM for Database Administrator User Access
+
+11. **Create an IAM group named `DBAdministrators` with specific permissions.**
+    - Navigate to `IAM` > `Groups`.
+    - Create a new group named `DBAdministrators`.
+    - Attach the following policies:
+      - `AmazonRDSReadOnlyAccess`
+      - `AmazonSSMFullAccess`
+
+12. **Create an IAM user named `Olivia`.**
+    - Follow similar steps as for `Nikhil`, but set the password to `Db@dministrat0r2020!` and clear the password reset requirement.
+    - Add `Olivia` to the `DBAdministrators` group.
+
+### Task 4: Logging in as the Database Administrator and Resolving Issues
+
+13. **Log in as `Olivia` and verify the RDS database is running.**
+    - Open the Amazon RDS service page.
+    - Ensure the status of the database instance is `Available`.
+
+14. **Verify EC2 instance details and permissions.**
+    - Olivia might not have permission initially.
+    - Have `Sofía` attach `AmazonEC2ReadOnlyAccess` and `IAMReadOnlyAccess` to `DBAdministrators` group.
+    - Olivia should now be able to see details.
+
+15. **Check Systems Manager Parameter Store access.**
+    - Olivia should check the Parameter Store for connection parameters.
+    - Verify and update the `dbUser` value if necessary.
+
+### Task 5: Using IAM Policy Simulator and Creating Custom IAM Policy
+
+16. **Simulate policies for Olivia using IAM Policy Simulator.**
+    - Go to https://policysim.aws.amazon.com/.
+    - Select Olivia, choose `IAMReadOnlyAccess` policy, and run simulation.
+    - Identify necessary actions and create a custom policy.
+
+17. **Create a custom IAM policy `LimitedIamPolicy`.**
+    - Configure using Visual Editor with specified actions for EC2 and IAM services.
+    - Attach `LimitedIamPolicy` to `DBAdministrators` group and remove `IAMReadOnlyAccess`.
+
+18. **Verify Olivia's access.**
+    - Olivia should verify she can still access the details of `CafeRole` in the IAM console.
+
+
+
+By following these steps, you should be able to complete the challenge lab successfully.
