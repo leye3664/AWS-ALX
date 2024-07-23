@@ -1,0 +1,105 @@
+### Module 14 – Guided Lab: Hybrid Storage and Data Migration with AWS Storage Gateway File Gateway
+
+---
+
+## Lab Overview and Objectives
+In this lab, you will use the AWS Storage Gateway File Gateway service to:
+1. Attach a Network File System (NFS) mount to an on-premises data store.
+2. Replicate that data to an S3 bucket in AWS.
+3. Configure advanced Amazon S3 features like lifecycle policies and cross-Region replication.
+
+After completing this lab, you should be able to:
+- Configure a File Gateway with an NFS file share and attach it to a Linux instance.
+- Migrate data from the Linux instance to an S3 bucket.
+- Create and configure a primary S3 bucket for data migration.
+- Create and configure a secondary S3 bucket for cross-Region replication.
+- Create an S3 lifecycle policy to automatically manage data.
+
+Duration: Approximately 90 minutes.
+
+## Steps
+
+### Task 1: Reviewing the Lab Architecture
+- **AWS Regions**:
+  - **us-east-1 (N. Virginia)**: Linux EC2 instance and Storage Gateway virtual appliance.
+  - **us-east-2 (Ohio)**: Primary S3 bucket.
+  - **us-west-2 (Oregon)**: Secondary S3 bucket for cross-Region replication.
+
+### Task 2: Creating the Primary and Secondary S3 Buckets
+1. **Create the primary S3 bucket**:
+    - Open the S3 console.
+    - Choose **Create bucket**.
+    - Configure settings:
+        - **Bucket name**: Unique name.
+        - **Region**: US East (Ohio) us-east-2.
+        - **Bucket Versioning**: Enable.
+    - Choose **Create bucket**.
+2. **Create the secondary S3 bucket**:
+    - Repeat the steps above.
+    - Configure settings:
+        - **Region**: US West (Oregon) us-west-2.
+        - **Bucket Versioning**: Enable.
+
+### Task 3: Enabling Cross-Region Replication
+1. Open the primary bucket in the US East (Ohio) region.
+2. Go to the **Management** tab and choose **Replication rules** > **Create replication rule**.
+3. Configure the replication rule:
+    - **Replication rule name**: crr-full-bucket.
+    - **Status**: Enabled.
+    - **Source bucket**:
+        - **Rule scope**: Apply to all objects in the bucket.
+    - **Destination**:
+        - **Bucket**: Choose the secondary bucket in US West (Oregon).
+        - **IAM role**: S3-CRR-Role.
+4. Choose **Save**.
+5. **Upload a file** to the primary bucket to test replication.
+
+### Task 4: Configuring the File Gateway and Creating an NFS File Share
+1. **Launch the File Gateway appliance**:
+    - Open the Storage Gateway console in the N. Virginia region.
+    - Choose **Create gateway**.
+    - Configure:
+        - **Gateway name**: File Gateway.
+        - **Gateway type**: Amazon S3 File Gateway.
+        - **Host platform**: Amazon EC2.
+        - **Launch instance**: t2.xlarge.
+    - Configure network settings:
+        - **VPC**: On-Prem-VPC.
+        - **Subnet**: On-Prem-Subnet.
+        - **Auto-assign public IP**: Enable.
+        - **Security groups**: FileGatewayAccess and OnPremSshAccess.
+    - Add storage:
+        - **Root volume**: 80GiB.
+        - **Additional volume**: 150GiB.
+2. **Activate the gateway**:
+    - Copy the public IPv4 address of the File Gateway instance.
+    - Complete activation in the Storage Gateway console.
+3. **Create an NFS file share**:
+    - **Gateway**: Select File Gateway Appliance.
+    - **File share protocol**: NFS.
+    - **Amazon S3 bucket name**: Primary bucket.
+    - **File share name**: share.
+    - **IAM role**: FgwIamPolicyARN.
+
+### Task 5: Mounting the File Share to the Linux Instance and Migrating Data
+1. **Connect to the Linux instance**:
+    - Use SSH with provided key (labsuser.ppk for Windows or labsuser.pem for macOS/Linux).
+2. **Mount the file share**:
+    - Create a directory: `sudo mkdir -p /mnt/nfs/s3`.
+    - Mount the share: `sudo mount -t nfs -o nolock,hard <File-Gateway-appliance-private-IP-address>:/share /mnt/nfs/s3`.
+3. **Copy data**:
+    - Copy files: `cp -v /media/data/*.png /mnt/nfs/s3`.
+
+### Task 6: Verifying Data Migration
+1. **Verify in the primary S3 bucket**:
+    - Open the S3 console.
+    - Check for uploaded files in the primary bucket.
+2. **Verify cross-Region replication**:
+    - Check for replicated files in the secondary bucket (may take up to 15 minutes).
+
+### Conclusion
+- Successfully migrated data to Amazon S3 using AWS Storage Gateway in File Gateway mode.
+- Configured cross-Region replication and verified data transfer.
+- Consider configuring S3 lifecycle policies for cost management.
+
+---
