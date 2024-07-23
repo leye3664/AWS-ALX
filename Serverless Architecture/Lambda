@@ -1,0 +1,205 @@
+To implement the serverless architecture on AWS for the inventory tracking system, follow the step-by-step guide below:
+
+### Task 1: Creating a Lambda Function to Load Data
+
+1. **Navigate to AWS Lambda Service**:
+   - Open the AWS Management Console.
+   - On the Services menu, choose **Lambda**.
+   - Choose **Create function**.
+   - Select **Author from scratch**.
+
+2. **Configure the Lambda Function**:
+   - **Function name**: `Load-Inventory`
+   - **Runtime**: Python 3.7
+   - Expand **Choose or create an execution role**.
+   - **Execution role**: Use an existing role.
+   - **Existing role**: `Lambda-Load-Inventory-Role`
+   - Choose **Create function**.
+
+3. **Add Code to the Lambda Function**:
+   - Scroll down to the **Code source** section.
+   - In the **Environment** pane, choose `lambda_function.py`.
+   - Delete any existing code.
+   - Copy and paste the provided Python code into the editor:
+     ```python
+     import json, urllib, boto3, csv
+
+     # Connect to S3 and DynamoDB
+     s3 = boto3.resource('s3')
+     dynamodb = boto3.resource('dynamodb')
+
+     # Connect to the DynamoDB tables
+     inventoryTable = dynamodb.Table('Inventory')
+
+     # This handler is run every time the Lambda function is triggered
+     def lambda_handler(event, context):
+         # Show the incoming event in the debug log
+         print("Event received by Lambda function: " + json.dumps(event, indent=2))
+         # Get the bucket and object key from the Event
+         bucket = event['Records'][0]['s3']['bucket']['name']
+         key = urllib.parse.unquote_plus(event['Records'][0]['s3']['object']['key'])
+         localFilename = '/tmp/inventory.txt'
+         # Download the file from S3 to the local filesystem
+         try:
+             s3.meta.client.download_file(bucket, key, localFilename)
+         except Exception as e:
+             print(e)
+             print('Error getting object {} from bucket {}. Make sure they exist and your bucket is in the same region as this function.'.format(key, bucket))
+             raise e
+         # Read the Inventory CSV file
+         with open(localFilename) as csvfile:
+             reader = csv.DictReader(csvfile, delimiter=',')
+             # Read each row in the file
+             rowCount = 0
+             for row in reader:
+                 rowCount += 1
+                 # Show the row in the debug log
+                 print(row['store'], row['item'], row['count'])
+                 try:
+                     # Insert Store, Item and Count into the Inventory table
+                     inventoryTable.put_item(
+                         Item={
+                             'Store': row['store'],
+                             'Item': row['item'],
+                             'Count': int(row['count'])
+                         }
+                     )
+                 except Exception as e:
+                     print(e)
+                     print("Unable to insert data into DynamoDB table".format(e))
+             # Finished!
+             return "%d counts inserted" % rowCount
+     ```
+   - Choose **Deploy** to save your changes.
+
+### Task 2: Configuring an Amazon S3 Event
+
+1. **Create an S3 Bucket**:
+   - On the Services menu, choose **S3**.
+   - Choose **Create bucket**.
+   - For **Bucket name**, enter: `inventory-<number>` (replace `<number>` with a random number).
+   - Choose **Create bucket**.
+
+2. **Configure the S3 Bucket to Trigger the Lambda Function**:
+   - Choose the name of your `inventory-` bucket.
+   - Choose the **Properties** tab.
+   - Scroll down to **Event notifications**.
+   - Choose **Create event notification** and configure these settings:
+     - **Name**: `Load-Inventory`
+     - **Event types**: All object create events.
+     - **Destination**: Lambda Function.
+     - **Lambda function**: `Load-Inventory`.
+   - Choose **Save changes**.
+
+### Task 3: Testing the Loading Process
+
+1. **Download Inventory Files**:
+   - Right-click and download the following files:
+     - `inventory-berlin.csv`
+     - `inventory-calcutta.csv`
+     - `inventory-karachi.csv`
+     - `inventory-pusan.csv`
+     - `inventory-shanghai.csv`
+     - `inventory-springfield.csv`
+
+2. **Upload an Inventory File to the S3 Bucket**:
+   - In the S3 console, return to your bucket.
+   - Choose the **Objects** tab.
+   - Choose **Upload**.
+   - Choose **Add files** and select one of the inventory CSV files.
+   - Choose **Upload**.
+
+3. **Check the Data in the DynamoDB Table**:
+   - Open the provided **Dashboard URL** from the Credentials window.
+   - Open a new browser tab, paste the URL, and press **ENTER**.
+   - View the inventory data on the dashboard, which is retrieved from DynamoDB.
+   - Alternatively, navigate to **DynamoDB** in the AWS console, choose the **Inventory** table, and view the **Items** tab.
+
+### Task 4: Configuring Notifications
+
+1. **Create an SNS Topic**:
+   - On the Services menu, choose **Simple Notification Service**.
+   - In the **Create topic** box, for **Topic name**, enter: `NoStock`.
+   - Keep **Standard** selected.
+   - Choose **Create topic**.
+
+2. **Create a Subscription to the SNS Topic**:
+   - In the lower half of the page, choose **Create subscription** and configure these settings:
+     - **Protocol**: Email.
+     - **Endpoint**: Enter your email address.
+   - Choose **Create subscription**.
+   - Confirm the subscription through the email you receive.
+
+### Task 5: Creating a Lambda Function to Send Notifications
+
+1. **Create the Check-Stock Lambda Function**:
+   - On the Services menu, choose **Lambda**.
+   - Choose **Create function**.
+   - Configure these settings:
+     - **Function name**: `Check-Stock`.
+     - **Runtime**: Python 3.7.
+     - Expand **Choose or create an execution role**.
+     - **Execution role**: Use an existing role.
+     - **Existing role**: `Lambda-Check-Stock-Role`.
+   - Choose **Create function**.
+
+2. **Add Code to the Lambda Function**:
+   - Scroll down to the **Code source** section.
+   - In the **Environment** pane, choose `lambda_function.py`.
+   - Delete any existing code.
+   - Copy and paste the provided Python code into the editor:
+     ```python
+     import json, boto3
+
+     # This handler is run every time the Lambda function is triggered
+     def lambda_handler(event, context):
+         # Show the incoming event in the debug log
+         print("Event received by Lambda function: " + json.dumps(event, indent=2))
+         # For each inventory item added, check if the count is zero
+         for record in event['Records']:
+             newImage = record['dynamodb'].get('NewImage', None)
+             if newImage:
+                 count = int(record['dynamodb']['NewImage']['Count']['N'])
+                 if count == 0:
+                     store = record['dynamodb']['NewImage']['Store']['S']
+                     item = record['dynamodb']['NewImage']['Item']['S']
+                     # Construct message to be sent
+                     message = store + ' is out of stock of ' + item
+                     print(message)
+                     # Connect to SNS
+                     sns = boto3.client('sns')
+                     alertTopic = 'NoStock'
+                     snsTopicArn = [t['TopicArn'] for t in sns.list_topics()['Topics']
+                                    if t['TopicArn'].lower().endswith(':' + alertTopic.lower())][0]
+                     # Send message to SNS
+                     sns.publish(
+                         TopicArn=snsTopicArn,
+                         Message=message,
+                         Subject='Inventory Alert!',
+                         MessageStructure='raw'
+                     )
+         # Finished!
+         return 'Successfully processed {} records.'.format(len(event['Records']))
+     ```
+   - Choose **Deploy** to save your changes.
+
+3. **Add a DynamoDB Trigger**:
+   - Scroll to the **Designer** section (at the top of the page).
+   - Choose **Add trigger** and configure these settings:
+     - **Select a trigger**: DynamoDB.
+     - **DynamoDB Table**: `Inventory`.
+   - Choose **Add**.
+
+### Task 6: Testing the System
+
+1. **Upload Another Inventory File**:
+   - On the Services menu, choose **S3**.
+   - Choose the name of your `inventory-` bucket.
+   - Choose **Upload** and upload a different inventory file.
+
+2. **Check the Dashboard and Notifications**:
+   - Return to the **Inventory System Dashboard** and refresh the page.
+   - You should see the inventory data from both stores.
+   - Check your email for a notification indicating that a store has an out-of-stock item.
+
+By following these steps, you will have successfully implemented a serverless architecture on AWS for an inventory tracking system, complete with notifications for out-of-stock items.
