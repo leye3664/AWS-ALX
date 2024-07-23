@@ -1,0 +1,106 @@
+Let's go through the steps needed to complete this lab.
+
+### Task 1: Downloading the Source Code
+1. **Download the Source Code**:
+   - Download the two provided files: `salesAnalysisReportDataExtractor.zip` and `salesAnalysisReport.zip`.
+   - Extract each zip file to your local machine and examine the contents.
+
+2. **Answer Question 1**:
+   - **Why does the `salesAnalysisReportDataExtractor.zip` file have a package folder?**
+     - The package folder contains the dependencies and libraries needed by the Lambda function to execute the code properly. This ensures that all necessary packages are bundled together.
+
+### Task 2: Creating the DataExtractor Lambda Function in the VPC
+1. **Create a Security Group for the Lambda Function**:
+   - Go to the VPC console and create a new security group named `LambdaSG`.
+   - Set the VPC to `Lab VPC`.
+   - For outbound rules, allow all traffic to all addresses.
+
+2. **Update the Database Security Group**:
+   - Find the `DatabaseSG` security group.
+   - Add an inbound rule:
+     - Type: `MYSQL/Aurora`
+     - Source: Your new LambdaSG security group.
+     - Save the rules.
+
+3. **Create the Lambda Function**:
+   - Go to the Lambda console and create a new function:
+     - Name: `salesAnalysisReportDataExtractor`
+     - Runtime: `Python 3.8`
+     - Role: `salesAnalysisReportDERole`
+     - VPC: `Lab VPC`
+     - Subnets: Select `Private subnet 1` and `Private subnet 2`
+     - Security Group: The `LambdaSG` security group.
+   - Upload the `salesAnalysisReportDataExtractor.zip` file.
+   - Set the handler to `salesAnalysisReportDataExtractor.lambda_handler`.
+   - Set Memory Size to `128 MB`.
+   - Set Timeout to `30 seconds`.
+
+4. **Answer Question 2**:
+   - **Why must the `salesAnalysisReportDataExtractor` be in a VPC?**
+     - The Lambda function must be in a VPC to access the RDS database securely, as the database is also within the VPC and not accessible from the public internet.
+
+### Task 3: Creating the salesAnalysisReport Lambda Function
+1. **Create the Lambda Function**:
+   - Go to the Lambda console and create a new function:
+     - Name: `salesAnalysisReport`
+     - Runtime: `Python 3.8`
+     - Role: `salesAnalysisReportRole`
+   - Upload the `salesAnalysisReport.zip` file.
+   - Set the handler to `salesAnalysisReport.lambda_handler`.
+   - Set Memory Size to `128 MB`.
+   - Set Timeout to `30 seconds`.
+
+### Task 4: Creating an SNS Topic
+1. **Create an SNS Topic**:
+   - Go to the SNS console and create a new topic:
+     - Name: `SalesReportTopic`
+     - Display Name: `Sales Report Topic`
+
+2. **Update the salesAnalysisReport Lambda Function**:
+   - Add an environment variable to the Lambda function:
+     - Name: `topicARN`
+     - Value: The ARN of the `SalesReportTopic`.
+
+3. **Answer Question 3**:
+   - **Could the `topicARN` be stored as an AWS Systems Manager parameter instead of as an environment variable?**
+     - Yes, the `topicARN` could be stored as an AWS Systems Manager parameter. This would allow for easier updates and management of configuration values without modifying the Lambda function's environment variables directly.
+
+### Task 5: Creating an Email Subscription to the SNS Topic
+1. **Create an Email Subscription**:
+   - In the SNS console, create a new subscription to the `SalesReportTopic`.
+   - Protocol: Email
+   - Endpoint: Your email address.
+
+2. **Confirm the Subscription**:
+   - Check your email and confirm the subscription.
+
+3. **Answer Question 4**:
+   - **Will you receive an email message if you do not confirm the topic subscription?**
+     - No, you will not receive any email messages unless you confirm the subscription.
+
+### Task 6: Testing the salesAnalysisReport Lambda Function
+1. **Create and Run a Test for the Lambda Function**:
+   - Create a test event in the Lambda console for the `salesAnalysisReport` function.
+   - Use the default `hello-world` test event.
+   - Run the test and check if you receive the email report.
+
+2. **Troubleshoot if Needed**:
+   - If the test fails, check the CloudWatch logs for errors and address any issues.
+
+### Task 7: Setting Up an EventBridge Event to Trigger the Lambda Function Daily
+1. **Create an EventBridge Rule**:
+   - Go to the EventBridge console and create a new rule.
+   - Set the rule to trigger daily at a specific time using a cron expression in UTC.
+   - Set the target to the `salesAnalysisReport` Lambda function.
+
+2. **Verify the Report**:
+   - Check your email to see if you received the report at the scheduled time.
+
+3. **Answer Question 5**:
+   - **Frank tells you that he hasn't received an email report in the last few days. What could you do to troubleshoot this issue?**
+     - Verify that the EventBridge rule is correctly configured and active.
+     - Check the CloudWatch logs for the `salesAnalysisReport` Lambda function to see if it was invoked and if there were any errors.
+     - Ensure that the email subscription is still active and confirmed.
+     - Check for any issues with the SNS topic or email delivery.
+
+After completing these tasks, you will have implemented a serverless architecture to generate and send a daily sales report for the café.
