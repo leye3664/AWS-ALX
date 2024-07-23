@@ -1,0 +1,65 @@
+
+### Task 1: Creating a VPC Peering Connection
+
+1. **Open the Amazon VPC Console:**
+   - In the AWS Management Console, go to Services and select VPC.
+
+2. **Create the Peering Connection:**
+   - In the left navigation pane, choose Peering Connections.
+   - Click `Create Peering Connection`.
+   - Configure the settings as follows:
+     - **Peering connection name tag:** Lab-Peer
+     - **VPC (Requester):** Select `Lab VPC`.
+     - **VPC (Accepter):** Select `Shared VPC`.
+   - Click `Create Peering Connection`, then click `OK`.
+
+3. **Accept the Peering Connection:**
+   - Select `Lab-Peer`.
+   - Choose `Actions` and select `Accept Request`.
+   - Click `Yes, Accept`, then choose `Close` in the pop-up box.
+
+### Task 2: Configuring Route Tables
+
+1. **Open the Route Tables:**
+   - In the left navigation pane, choose Route Tables.
+
+2. **Configure Lab VPC Route Table:**
+   - Select `Lab Public Route Table` (for Lab VPC).
+   - Go to the `Routes` tab and choose `Edit routes`.
+   - Click `Add route` and configure:
+     - **Destination:** 10.5.0.0/16 (CIDR block range of Shared VPC)
+     - **Target:** Select Peering Connection, then select `Lab-Peer` from the list.
+   - Click `Save routes`, then `Close`.
+
+3. **Configure Shared VPC Route Table:**
+   - Select `Shared-VPC Route Table`.
+   - Go to the `Routes` tab and choose `Edit routes`.
+   - Click `Add route` and configure:
+     - **Destination:** 10.0.0.0/16 (CIDR block range of Lab VPC)
+     - **Target:** Select Peering Connection, then select `Lab-Peer` from the list.
+   - Click `Save routes`, then `Close`.
+
+### Task 3: Testing the VPC Peering Connection
+
+1. **Open the Amazon EC2 Console:**
+   - In the AWS Management Console, go to Services and select EC2.
+
+2. **Find the Public IP Address of the Inventory Application:**
+   - In the left navigation pane, choose Instances.
+   - Select the EC2 instance running the Inventory application.
+   - Copy the IPv4 Public IP address shown in the `Description` tab.
+
+3. **Test the Connection:**
+   - Open a new web browser tab and navigate to the copied IP address.
+   - You should see the Inventory application with the message: "Please configure settings to connect to database".
+   - Choose `Settings` and configure the database connection:
+     - **Endpoint:** Paste the database endpoint (find this in the `Details` section of the database instance).
+     - **Database:** inventory
+     - **Username:** admin
+     - **Password:** lab-password
+   - Choose `Save`.
+
+4. **Verify the Connection:**
+   - The application should now show data from the database. This confirms that the VPC peering connection is working because the Shared VPC doesn't have an internet gateway, and access to the database is only possible through the VPC peering connection.
+
+By following these steps, you should be able to create a VPC peering connection, configure the route tables, and test the connection successfully. If you encounter any issues or need further assistance, feel free to ask!
