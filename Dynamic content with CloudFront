@@ -1,0 +1,99 @@
+Here's a step-by-step guide for the "Streaming Dynamic Content using Amazon CloudFront" lab. This will help you use Amazon Elastic Transcoder to convert a source video into multiple bit-rates and deliver the content using CloudFront.
+
+### Lab Overview and Objectives
+
+1. **Create multiple bit-rate versions of a source media file using Amazon Elastic Transcoder.**
+2. **Deliver the dynamic (multi bit-rate) stream using Amazon CloudFront.**
+
+### Estimated Time: 30 minutes
+
+### Prerequisites
+- Access to AWS services might be restricted in the lab environment.
+
+### Accessing the AWS Management Console
+
+1. **Start the Lab:**
+   - Choose **Start Lab** at the top of the instructions.
+   - Wait until the **Start Lab** panel displays **Lab status: ready**, then close the panel.
+   - Choose **AWS** at the top of the instructions to open the AWS Management Console in a new browser tab. You will be logged in automatically.
+   - Arrange the AWS Management Console tab and the instructions side by side.
+
+### Task 1: Lab Preparation
+
+2. **Amazon S3 Setup:**
+   - In the AWS Management Console, go to **Services** > **S3**.
+   - Note the Region of the S3 bucket containing `awstrainingreinvent`.
+   - Open the bucket and navigate to the `input` folder to find `AmazonS3Sample.mp4`.
+
+### Task 2: Create an Amazon CloudFront Distribution
+
+3. **CloudFront Distribution:**
+   - Go to **Services** > **CloudFront**.
+   - Choose **Create a CloudFront distribution**.
+   - In the **Origin Settings** section:
+     - Select the S3 bucket with `awstrainingreinvent`.
+     - Set **Origin access** to **Public**.
+     - Under **Web Application Firewall (WAF)**, select **Do not enable security protections**.
+   - Ignore the **Custom SSL certificate** warning.
+   - Scroll to the bottom and choose **Create Distribution**.
+
+### Task 3: Create an Amazon Elastic Transcoder Pipeline
+
+4. **Elastic Transcoder Pipeline:**
+   - Go to **Services** > **Elastic Transcoder**.
+   - Ensure the same Region as the S3 bucket is selected.
+   - On the **Pipelines** page, choose **Create a new Pipeline**.
+   - For **Pipeline Name**, enter `InputPipeline`.
+   - For **Input Bucket**, select the `awstrainingreinvent` S3 bucket.
+   - For **IAM Role**, select **AmazonElasticTranscoderRole**.
+   - In the **Configuration for Amazon S3 Bucket for Transcoded Files and Playlists** section:
+     - Set **Bucket** to the `awstrainingreinvent` S3 bucket.
+     - Set **Storage Class** to **Standard**.
+   - In the **Configuration for Amazon S3 Bucket for Thumbnails** section:
+     - Set **Bucket** to the `awstrainingreinvent` S3 bucket.
+     - Set **Storage Class** to **ReducedRedundancy**.
+   - Choose **Create Pipeline**.
+
+5. **Create a Job:**
+   - On the **Pipelines** page, choose **Create New Job**.
+   - For **Pipeline**, select `InputPipeline`.
+   - For **Output Key Prefix**, enter `output/`.
+   - For **Input Key**, select `input/AmazonS3Sample.mp4`.
+
+6. **Configure Output Details:**
+   - For **Preset**, select **System preset: HLS 2M**.
+   - For **Segment Duration**, enter `10`.
+   - For **Output Key**, enter `HLS20M`.
+   - Click **+ Add Another Output** to create segments for:
+     - **Preset:** HLS 1.5M, **Output Key:** `HLS15M`
+     - **Preset:** HLS 1M, **Output Key:** `HLS10M`
+
+7. **Configure a Playlist:**
+   - Under **Playlists (Adaptive Streaming)**, choose **Add Playlist**.
+     - Set **Master Playlist Name** to `primary`.
+     - Set **Playlist Format** to **HLSv3**.
+     - Select all three outputs (HLS20M, HLS15M, HLS10M).
+   - Choose **Create New Job**.
+
+### Task 4: Test Playback of the Dynamic (Multi Bit-Rate) Stream
+
+8. **Construct the Playback URL:**
+   - Obtain the Amazon CloudFront domain name:
+     - Go to **Services** > **CloudFront**.
+     - Verify the status of the distribution changes to **Enabled**.
+     - Copy the **Distribution domain name**.
+   - Obtain the playlist file path:
+     - Go to **Services** > **S3**.
+     - Select the `awstrainingreinvent` S3 bucket.
+     - Open the `output` folder and select `primary.m3u8`.
+   - Construct the URL: `http://<CloudFront domain name>/output/primary.m3u8`.
+
+9. **Test the URL:**
+   - Type the URL into the default browser of an iOS or Android device, or a browser on your computer.
+
+### Conclusion
+
+- You have successfully:
+  - Learned the basics of Amazon Elastic Transcoder and Amazon CloudFront.
+  - Created an Elastic Transcoder pipeline and a CloudFront distribution.
+  - Used Elastic Transcoder to convert a video file into HLS formats and distributed it using CloudFront.
