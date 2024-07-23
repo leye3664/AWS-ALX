@@ -1,0 +1,224 @@
+
+### Task 1: Creating a Public Subnet
+
+1. **Open the Amazon VPC console.**
+2. **Confirm the Lab VPC exists:**
+   - You should see a VPC named "Lab VPC."
+3. **Create a Public Subnet:**
+   - Go to `Subnets` on the left sidebar.
+   - Click `Create subnet`.
+   - Fill in the following:
+     - **Name tag:** Public Subnet
+     - **VPC:** Select `Lab VPC`.
+     - **Availability Zone:** Choose the Availability Zone `a` (e.g., us-east-1a).
+     - **IPv4 CIDR block:** 10.0.0.0/24
+   - Click `Create subnet`.
+4. **Create an Internet Gateway:**
+   - Go to `Internet Gateways` on the left sidebar.
+   - Click `Create internet gateway`.
+   - Name it something like `Lab IGW`.
+   - Click `Create internet gateway`.
+   - Once created, select the internet gateway and click `Actions > Attach to VPC`.
+   - Select `Lab VPC` and click `Attach internet gateway`.
+5. **Update the Route Table:**
+   - Go to `Route Tables` on the left sidebar.
+   - Select the route table associated with your `Lab VPC`.
+   - Click the `Routes` tab and then click `Edit routes`.
+   - Add a route:
+     - **Destination:** 0.0.0.0/0
+     - **Target:** Select the internet gateway you just created (e.g., `igw-xxxxxxx`).
+   - Click `Save routes`.
+
+### Task 2: Creating a Bastion Host
+
+1. **Open the Amazon EC2 console.**
+2. **Launch an EC2 Instance:**
+   - Click `Launch Instance`.
+   - Configure the instance as follows:
+     - **Name:** Bastion Host
+     - **AMI:** Amazon Linux 2023 AMI (HVM)
+     - **Instance type:** t2.micro
+     - **Network settings:**
+       - **VPC:** Select `Lab VPC`.
+       - **Subnet:** Select `Public Subnet`.
+       - **Auto-assign Public IP:** Disabled
+     - **Security Group:** Create a new security group named `Bastion Host SG`.
+       - **Inbound rules:** Add rule
+         - **Type:** SSH
+         - **Port range:** 22
+         - **Source:** My IP
+   - **Key pair:** Select `vockey` (or create a new key pair named `vockey` and download it).
+   - Click `Launch Instance`.
+
+### Task 3: Allocating an Elastic IP Address for the Bastion Host
+
+1. **Allocate an Elastic IP:**
+   - Go to `Elastic IPs` on the left sidebar.
+   - Click `Allocate Elastic IP address`.
+   - Click `Allocate`.
+2. **Associate Elastic IP with Bastion Host:**
+   - Select the allocated Elastic IP.
+   - Click `Actions > Associate Elastic IP address`.
+   - Configure as follows:
+     - **Instance:** Select your Bastion Host instance.
+     - **Private IP address:** Leave as default (should auto-select the instance's private IP).
+   - Click `Associate`.
+
+### Task 4: Testing the Connection to the Bastion Host
+
+1. **Download the SSH key:**
+   - Follow the instructions to download the `labuser.pem` or `labuser.ppk` file.
+2. **Connect to Bastion Host using SSH:**
+   - For macOS/Linux:
+     ```bash
+     ssh -i /path/to/labuser.pem ec2-user@<Elastic-IP-of-Bastion-Host>
+     ```
+   - For Windows (using PuTTY):
+     - Open PuTTY.
+     - In `Host Name (or IP address)`, enter the Elastic IP of the Bastion Host.
+     - Under `Connection > SSH > Auth`, browse and select the `labuser.ppk` file.
+     - Click `Open`.
+
+### Task 5: Creating a Private Subnet
+
+1. **Create a Private Subnet:**
+   - Go to `Subnets` on the left sidebar.
+   - Click `Create subnet`.
+   - Fill in the following:
+     - **Name tag:** Private Subnet
+     - **VPC:** Select `Lab VPC`.
+     - **Availability Zone:** Same as Public Subnet (e.g., us-east-1a).
+     - **IPv4 CIDR block:** 10.0.1.0/24
+   - Click `Create subnet`.
+
+### Task 6: Creating a NAT Gateway
+
+1. **Create a NAT Gateway:**
+   - Go to `NAT Gateways` on the left sidebar.
+   - Click `Create NAT gateway`.
+   - Configure as follows:
+     - **Name:** Lab NAT Gateway
+     - **Subnet:** Select `Public Subnet`.
+     - **Elastic IP allocation ID:** Select an Elastic IP or allocate a new one.
+   - Click `Create NAT gateway`.
+2. **Create a Route Table for Private Subnet:**
+   - Go to `Route Tables` on the left sidebar.
+   - Click `Create route table`.
+   - Configure as follows:
+     - **Name tag:** Private Route Table
+     - **VPC:** Select `Lab VPC`.
+   - Click `Create route table`.
+3. **Add Route to NAT Gateway:**
+   - Select the newly created route table.
+   - Click the `Routes` tab and then click `Edit routes`.
+   - Add a route:
+     - **Destination:** 0.0.0.0/0
+     - **Target:** Select the NAT Gateway (e.g., `nat-xxxxxxx`).
+   - Click `Save routes`.
+4. **Associate Route Table with Private Subnet:**
+   - Click the `Subnet associations` tab.
+   - Click `Edit subnet associations`.
+   - Select `Private Subnet`.
+   - Click `Save associations`.
+
+### Task 7: Creating an EC2 Instance in the Private Subnet
+
+1. **Create a Key Pair:**
+   - Go to `Key Pairs` on the left sidebar.
+   - Click `Create key pair`.
+   - Name it `vockey2` and download the `.pem` or `.ppk` file.
+2. **Launch an EC2 Instance:**
+   - Click `Launch Instance`.
+   - Configure the instance as follows:
+     - **Name:** Private Instance
+     - **AMI:** Amazon Linux 2023 AMI (HVM)
+     - **Instance type:** t2.micro
+     - **Network settings:**
+       - **VPC:** Select `Lab VPC`.
+       - **Subnet:** Select `Private Subnet`.
+     - **Security Group:** Create a new security group.
+       - **Inbound rules:** Add rule
+         - **Type:** SSH
+         - **Port range:** 22
+         - **Source:** Bastion Host SG (security group ID of Bastion Host)
+   - **Key pair:** Select `vockey2`.
+   - Click `Launch Instance`.
+
+### Task 8: Configuring SSH Client for SSH Passthrough
+
+#### Windows Users
+
+1. **Install Pageant:**
+   - Download and install Pageant from the PuTTY download page.
+2. **Add Keys to Pageant:**
+   - Open Pageant.
+   - Click `Add Key` and select the `vockey2.ppk` file.
+   - Repeat for the `labuser.ppk` file.
+3. **Configure PuTTY:**
+   - Open PuTTY.
+   - Under `Connection > SSH > Auth`, enable `Allow agent forwarding`.
+   - Under `Auth`, browse and select `labuser.ppk`.
+   - Connect to Bastion Host using its Elastic IP.
+
+#### macOS/Linux Users
+
+1. **Add Keys to SSH-Agent:**
+   ```bash
+   ssh-add -K /path/to/vockey2.pem
+   ssh-add -K /path/to/labuser.pem
+   ```
+2. **Verify Keys:**
+   ```bash
+   ssh-add -L
+   ```
+3. **Connect to Bastion Host:**
+   ```bash
+   ssh -A ec2-user@<Elastic-IP-of-Bastion-Host>
+   ```
+
+### Task 9: Testing SSH Connection from Bastion Host
+
+1. **Connect to Bastion Host:**
+   - Use SSH as described above.
+2. **Connect to Private Instance:**
+   ```bash
+   ssh ec2-user@<private-ip-address-of-private-instance>
+   ```
+3. **Test Internet Connection:**
+   ```bash
+   ping 8.8.8.8
+   ```
+
+### Task 10: Creating a Network ACL
+
+1. **Create a Custom Network ACL:**
+   - Go to `Network ACLs` on the left sidebar.
+   - Click `Create network ACL`.
+   - Name it `Lab Network ACL`.
+   - Select `Lab VPC`.
+   - Click `Create`.
+2. **Configure Inbound and Outbound Rules:**
+   - Select the custom network ACL.
+   - Click `Inbound rules > Edit inbound rules`.
+   - Add rule to allow all traffic:
+     - **Rule number:** 100
+     - **Type:** All Traffic
+     - **Protocol:** All
+     - **Port range:** All
+     - **Source:** 0.0.0.0/0
+   - Click `Save changes`.
+   - Repeat for outbound rules with:
+     - **Destination:** 0.0.0.0/0
+
+### Task 11: Testing Your Custom Network ACL
+
+1. **Create Test Instance:**
+   - Launch an EC
+
+2 instance in the `Lab VPC` with `Public Subnet` and connect to it.
+2. **Test Connectivity:**
+   - From the Bastion Host, SSH into the test instance.
+   - Ensure you can connect and perform network tests such as `ping`.
+
+By following these steps, you should be able to complete the tasks and build the necessary infrastructure in AWS.
+
