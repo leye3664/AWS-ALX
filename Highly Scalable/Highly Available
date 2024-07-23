@@ -1,0 +1,137 @@
+Great! Let's walk through each step together. Start by opening the AWS Management Console as directed and follow the steps below. If you have any questions or run into issues along the way, let me know.
+
+### Task 1: Inspecting Your VPC
+
+1. **Access the AWS Management Console:**
+    - Open the AWS Management Console.
+
+2. **Inspect Your VPC:**
+    - Navigate to **Services** > **VPC**.
+    - Under **Filter by VPC**, select **Lab VPC**.
+    - Under **Your VPCs**, select **Lab VPC** and note the IPv4 CIDR value (10.0.0.0/16).
+
+3. **Inspect Subnets:**
+    - In the left navigation pane, choose **Subnets**.
+    - Verify **Public Subnet 1** and check its VPC, IPv4 CIDR (10.0.0.0/24), and Availability Zone.
+    - Select **Public Subnet 1** and check the **Route table** and **Network ACL** tabs.
+
+4. **Inspect Internet Gateway:**
+    - In the left navigation pane, choose **Internet gateways**.
+    - Verify the **Lab IG** gateway is attached to **Lab VPC**.
+
+5. **Inspect Security Groups:**
+    - In the left navigation pane, choose **Security groups**.
+    - Select **Inventory-DB** and check the inbound and outbound rules.
+
+### Task 2: Creating an Application Load Balancer
+
+1. **Access Load Balancer:**
+    - Navigate to **Services** > **EC2**.
+    - In the left navigation pane, choose **Load Balancers**.
+    - Choose **Create load balancer**.
+
+2. **Create Application Load Balancer:**
+    - Choose **Create** under **Application Load Balancer**.
+    - Name it **Inventory-LB**.
+    - Select **Lab VPC** and both public subnets.
+
+3. **Configure Security Group:**
+    - Choose **Create a new security group**, name it **Inventory-LB**.
+    - Add inbound rules for HTTP and HTTPS from **Anywhere-IPv4**.
+    - Create and assign this security group to the load balancer.
+
+4. **Configure Target Group:**
+    - Choose **Create target group**.
+    - Name it **Inventory-App**.
+    - Select **Instances** as the target type.
+    - Ensure **Lab VPC** is chosen.
+    - Configure advanced health check settings: Healthy threshold: 2, Interval: 10 seconds.
+    - Create the target group.
+
+5. **Complete Load Balancer Configuration:**
+    - Return to the load balancer configuration tab.
+    - Refresh the **Listeners and routing** section.
+    - Forward HTTP:80 to **Inventory-App**.
+    - Create the load balancer.
+
+### Task 3: Creating an Auto Scaling Group
+
+1. **Create AMI from Existing Instance:**
+    - Navigate to **EC2**.
+    - Wait for **Web Server 1** to display **2/2 checks passed**.
+    - Select **Web Server 1**.
+    - Choose **Actions** > **Image and templates** > **Create image**.
+    - Name the image **Web Server AMI** and create it.
+
+2. **Create Launch Template:**
+    - In the left navigation pane, choose **Launch Templates**.
+    - Choose **Create launch template**.
+    - Name it **Inventory-LT**.
+    - Select **Provide guidance to help me set up a template that I can use with EC2 Auto Scaling**.
+    - Choose **My AMIs** and select **Web Server AMI**.
+    - Set **Instance type** to **t2.micro**.
+    - Choose **vockey** as the key pair.
+    - Select **Inventory-App** security group.
+    - Set IAM instance profile to **Inventory-App-Role**.
+    - Enable detailed CloudWatch monitoring.
+    - Enter the user data script provided.
+    - Create the launch template.
+
+3. **Create Auto Scaling Group:**
+    - Select **Inventory-LT** launch template.
+    - Choose **Actions** > **Create Auto Scaling group**.
+    - Name it **Inventory-ASG**.
+    - Select **Lab VPC** and both private subnets.
+    - Attach to **Inventory-App** target group.
+    - Set the health check grace period to 90 seconds.
+    - Enable group metrics collection within CloudWatch.
+    - Set desired, minimum, and maximum capacity to 2 instances.
+    - Add a tag with Key: **Name**, Value: **Inventory-App**.
+    - Create the Auto Scaling group.
+
+### Task 4: Updating Security Groups
+
+1. **Update Application Security Group:**
+    - Go to **Security Groups**.
+    - Select **Inventory-App**.
+    - Edit inbound rules.
+    - Add a rule to accept HTTP traffic from **Inventory-LB** security group.
+
+2. **Update Database Security Group:**
+    - Select **Inventory-DB**.
+    - Edit inbound rules.
+    - Delete the existing rule.
+    - Add a rule for MySQL/Aurora traffic from **Inventory-App** security group.
+
+### Task 5: Testing the Application
+
+1. **Verify Target Group Health:**
+    - Go to **Target Groups**.
+    - Select **Inventory-App**.
+    - Refresh until both instances are healthy.
+
+2. **Test Load Balancer:**
+    - Go to **Load Balancers**.
+    - Select **Inventory-LB**.
+    - Copy the DNS name and access it in a new browser tab.
+    - Reload the page to see the instance ID and Availability Zone toggle.
+
+### Task 6: Testing High Availability
+
+1. **Simulate Instance Failure:**
+    - Go to **EC2**.
+    - Select one of the **Inventory-App** instances.
+    - Choose **Instance State** > **Terminate instance**.
+
+2. **Verify Application Continuity:**
+    - Reload the web application page to confirm availability.
+    - Monitor the EC2 console for the new instance launch by Auto Scaling.
+
+### Optional Task: Making the Database Highly Available
+
+1. **Enable Multi-AZ for RDS:**
+    - Go to **RDS**.
+    - Select the **inventory-db** instance.
+    - Explore the information and enable Multi-AZ deployment if desired.
+
+Proceed with Task 1 and let me know if you need any assistance or have any questions.
